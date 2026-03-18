@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: adv_lembrete_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: adv_lembrete
+      MYSQL_USER: adv_user
+      MYSQL_PASSWORD: 123456
+    ports:
+      - "3308:3306"
+    volumes:
+      - adv_lembrete_mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+
+volumes:
+  adv_lembrete_mysql_data:
