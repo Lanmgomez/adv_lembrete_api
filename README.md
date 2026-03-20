@@ -85,6 +85,14 @@ Authorization: Bearer SEU_TOKEN
 ## ➕ Criar usuário
 
 **POST** `/api/users`
+```json
+{
+  "username": "teste 5",
+  "email": "teste_5@hotmail.com",
+  "password": "123456",
+  "user_type": "user"
+}
+```
 
 ---
 
