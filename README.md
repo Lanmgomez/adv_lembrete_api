@@ -4,6 +4,16 @@ API REST construída em Go utilizando Gin, MySQL e JWT para autenticação.
 
 ---
 
+## 📚 Índice
+
+* [▶️ Como rodar](#️-como-rodar-o-projeto)
+* [🔐 Autenticação](#-1-autenticação)
+* [👥 Usuários](#-2-usuários)
+* [🏢 Entidades](#-3-entidades)
+* [🛠️ Tecnologias](#️-tecnologias-utilizadas)
+
+---
+
 ## ▶️ Como rodar o projeto
 
 ```bash
@@ -25,10 +35,10 @@ go get github.com/gin-contrib/cors
 
 ---
 
-## 📦 Subir um Docker Container
+## 📦 Subir com Docker
 
 ```bash
- docker-compose up --build
+docker-compose up --build
 ```
 
 ---
@@ -39,28 +49,10 @@ go get github.com/gin-contrib/cors
 
 **POST** `/api/auth/login`
 
-### Body
-
 ```json
 {
   "email": "islan_gomes@hotmail.com",
   "password": "123456"
-}
-```
-
-### Resposta (200 OK)
-
-```json
-{
-  "access_token": "SEU_TOKEN",
-  "token_type": "Bearer",
-  "user": {
-    "id": 1,
-    "username": "islan gomes",
-    "email": "islan_gomes@hotmail.com",
-    "user_type": "owner",
-    "created_at": "2026-03-18T13:56:18Z"
-  }
 }
 ```
 
@@ -70,72 +62,23 @@ go get github.com/gin-contrib/cors
 
 **POST** `/api/logout`
 
-### Headers
-
 ```http
 Authorization: Bearer SEU_TOKEN
-```
-
-### Resposta
-
-```json
-{
-  "message": "logout realizado com sucesso",
-  "user_id": 1
-}
 ```
 
 ---
 
 # 👥 2. Usuários
 
-## 📄 Listar usuários (paginado)
+## 📄 Listar usuários
 
 **GET** `/api/users`
 
-### Headers
-
-```http
-Authorization: Bearer SEU_TOKEN
-```
-
-### Resposta
-
-```json
-{
-  "current_page": 1,
-  "total": 4,
-  "data": [
-    {
-      "id": 1,
-      "username": "islan gomes",
-      "email": "islan_gomes@hotmail.com",
-      "user_type": "owner",
-      "created_at": "2026-03-18T13:56:18Z"
-    }
-  ]
-}
-```
-
 ---
 
-## 🔍 Buscar usuário por ID
+## 🔍 Buscar por ID
 
 **GET** `/api/users/:id`
-
-### Resposta
-
-```json
-{
-  "data": {
-    "id": 1,
-    "username": "islan gomes",
-    "email": "islan_gomes@hotmail.com",
-    "user_type": "owner",
-    "created_at": "2026-03-18T13:56:18Z"
-  }
-}
-```
 
 ---
 
@@ -143,49 +86,11 @@ Authorization: Bearer SEU_TOKEN
 
 **POST** `/api/users`
 
-### Body
-
-```json
-{
-  "username": "teste 1",
-  "email": "teste_1@hotmail.com",
-  "password": "123456",
-  "user_type": "user"
-}
-```
-
-### Resposta (201 Created)
-
-```json
-{
-  "message": "Usuário criado com sucesso"
-}
-```
-
 ---
 
 ## ✏️ Atualizar usuário
 
 **PUT** `/api/users/:id`
-
-### Body
-
-```json
-{
-  "username": "Islan Gomes",
-  "email": "islan_gomes@hotmail.com",
-  "password": "123456",
-  "user_type": "owner"
-}
-```
-
-### Resposta
-
-```json
-{
-  "message": "usuário atualizado com sucesso"
-}
-```
 
 ---
 
@@ -193,13 +98,55 @@ Authorization: Bearer SEU_TOKEN
 
 **DELETE** `/api/users/:id`
 
-### Resposta
+---
+
+# 🏢 3. Entidades
+
+## 📄 Listar entidades (paginado)
+
+**GET** `/api/lembretes`
+
+### Headers
+
+```http
+Authorization: Bearer SEU_TOKEN
+```
+
+### Query Params
+
+* `nome` → string
+* `page` → int
+* `limit` → int
+
+---
+
+## 🔍 Buscar entidade por ID
+
+**GET** `/api/lembretes/:id`
+
+---
+
+## ➕ Criar entidade
+
+**POST** `/api/lembretes`
 
 ```json
 {
-  "message": "usuário deletado com sucesso"
+  "nome_entidade": "teste teste"
 }
 ```
+
+---
+
+## ✏️ Atualizar entidade
+
+**PUT** `/api/lembretes/:id`
+
+---
+
+## ❌ Deletar entidade
+
+**DELETE** `/api/lembretes/:id`
 
 ---
 
@@ -208,18 +155,16 @@ Authorization: Bearer SEU_TOKEN
 * Go (Golang)
 * Gin Gonic
 * MySQL
-* JWT (autenticação)
-* Docker (opcional)
+* JWT
+* Docker
 
 ---
 
 # 📌 Observações
 
-* Todas as rotas (exceto login) requerem autenticação via JWT
+* Todas as rotas (exceto login) requerem autenticação
 * Header obrigatório:
 
 ```http
 Authorization: Bearer SEU_TOKEN
 ```
-
----
