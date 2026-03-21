@@ -8,6 +8,7 @@ type RepositoryInterface interface {
 	FindByID(id int64) (*models.Entidade, error)
 	UpdateEntidadeInDB(id int64, lembrete *models.Entidade) error
 	DeleteEntidadeInDB(id int64) error
+	ExistsByID(id int64) (bool, error)
 	ExistsByNome(nome string) (bool, error)
 }
 
