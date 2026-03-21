@@ -30,6 +30,19 @@ func (r *Repository) CreateNewEntidadeInDB(entidade *models.Entidade) error {
 	return nil
 }
 
+func (r *Repository) ExistsByID(id int64) (bool, error) {
+	var exists bool
+
+	query := `SELECT EXISTS(SELECT 1 FROM entidades WHERE id = ?)`
+
+	err := r.DB.QueryRow(query, id).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
 func (r *Repository) ExistsByNome(nome string) (bool, error) {
 	var exists bool
 

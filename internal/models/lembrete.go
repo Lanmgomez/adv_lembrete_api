@@ -2,13 +2,26 @@ package models
 
 import "time"
 
-type Entidade struct {
-	ID            int64     `json:"id"`
-	NomeEntidade  string    `json:"nome_entidade"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
+type Lembrete struct {
+	ID                 int64     `json:"id"`
+	EntidadeID         int64     `json:"entidade_id"`
+	NomeLembrete       string    `json:"nome_lembrete"`
+	Descricao          string    `json:"descricao"`
+	Status             string    `json:"status"`
+	DataVencimento     time.Time `json:"data_vencimento"`
+	DiasAntecedencia   int       `json:"dias_antecedencia"`
+	EmailNotificacao   string    `json:"email_notificacao"`
+	CreatedAt          time.Time `json:"created_at"`
+	UpdatedAt          time.Time `json:"updated_at"`
+	DiasRestantes 	string `json:"dias_restantes"` // calculado (não vem do banco)
 }
 
-type CreateEntidadeInput struct {
-	NomeEntidade string `json:"nome_entidade" binding:"required"`
+type CreateLembreteInput struct {
+	EntidadeID       int64  `json:"entidade_id" binding:"required"`
+	NomeLembrete     string `json:"nome_lembrete" binding:"required"`
+	Descricao        string `json:"descricao"`
+	Status           string    `json:"status"`
+	DataVencimento   string `json:"data_vencimento" binding:"required"` // string → parse depois
+	DiasAntecedencia int    `json:"dias_antecedencia"`
+	EmailNotificacao string `json:"email_notificacao"`
 }

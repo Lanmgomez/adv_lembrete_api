@@ -31,6 +31,7 @@ go get golang.org/x/crypto/bcrypt
 go get github.com/joho/godotenv
 go get github.com/golang-jwt/jwt/v5
 go get github.com/gin-contrib/cors
+go get github.com/robfig/cron/v3
 ```
 
 ---
@@ -63,6 +64,7 @@ docker-compose up --build
 **POST** `/api/logout`
 
 ```http
+Content-Type: application/json
 Authorization: Bearer SEU_TOKEN
 ```
 
@@ -112,11 +114,12 @@ Authorization: Bearer SEU_TOKEN
 
 ## 📄 Listar entidades (paginado)
 
-**GET** `/api/lembretes`
+**GET** `/api/entidades`
 
 ### Headers
 
 ```http
+Content-Type: application/json
 Authorization: Bearer SEU_TOKEN
 ```
 
@@ -130,13 +133,13 @@ Authorization: Bearer SEU_TOKEN
 
 ## 🔍 Buscar entidade por ID
 
-**GET** `/api/lembretes/:id`
+**GET** `/api/entidades/:id`
 
 ---
 
 ## ➕ Criar entidade
 
-**POST** `/api/lembretes`
+**POST** `/api/entidades`
 
 ```json
 {
@@ -148,13 +151,176 @@ Authorization: Bearer SEU_TOKEN
 
 ## ✏️ Atualizar entidade
 
-**PUT** `/api/lembretes/:id`
+**PUT** `/api/entidades/:id`
 
 ---
 
 ## ❌ Deletar entidade
 
-**DELETE** `/api/lembretes/:id`
+**DELETE** `/api/entidades/:id`
+
+---
+
+# ⏰ 4. Lembretes
+
+## 📄 Listar lembretes (paginado)
+
+**GET** `/api/lembretes`
+
+### Headers
+
+```http
+Content-Type: application/json
+Authorization: Bearer SEU_TOKEN
+```
+
+### Query Params (opcionais)
+
+* `nome` → string
+* `page` → int
+* `limit` → int
+
+### Resposta (200 OK)
+
+```json
+{
+  "current_page": 1,
+  "total": 1,
+  "data": [
+    {
+      "id": 1,
+      "entidade_id": 1,
+      "nome_lembrete": "Enviar relatório",
+      "descricao": "Relatório mensal da entidade",
+      "status": "pendente",
+      "data_vencimento": "2026-04-10T00:00:00Z",
+      "dias_antecedencia": 10,
+      "email_notificacao": "email@dominio.com",
+      "created_at": "2026-03-21T10:00:00Z",
+      "updated_at": "2026-03-21T10:00:00Z",
+      "dias_restantes": "20 dias restantes"
+    }
+  ]
+}
+```
+
+## 🔍 Buscar lembrete por ID
+
+**GET** `/api/lembrete/:id`
+
+### Headers
+
+```http
+Content-Type: application/json
+Authorization: Bearer SEU_TOKEN
+```
+
+### Resposta (200 OK)
+
+```json
+{
+  "data": {
+    "id": 1,
+    "entidade_id": 1,
+    "nome_lembrete": "Enviar relatório",
+    "descricao": "Relatório mensal da entidade",
+    "status": "pendente",
+    "data_vencimento": "2026-04-10T00:00:00Z",
+    "dias_antecedencia": 10,
+    "email_notificacao": "email@dominio.com",
+    "created_at": "2026-03-21T10:00:00Z",
+    "updated_at": "2026-03-21T10:00:00Z",
+    "dias_restantes": "20 dias restantes"
+  }
+}
+```
+
+---
+
+## ➕ Criar lembrete
+
+### Headers
+
+```http
+Content-Type: application/json
+Authorization: Bearer SEU_TOKEN
+```
+
+**POST** `/api/lembrete`
+
+```json
+{
+  "entidade_id": 1,
+  "nome_lembrete": "Enviar relatório",
+  "descricao": "Relatório mensal da entidade",
+  "data_vencimento": "2026-04-10",
+  "dias_antecedencia": 10,
+  "email_notificacao": "email@dominio.com"
+}
+```
+
+## Resposta (201 Created)
+```json
+{
+  "message": "lembrete criado com sucesso"
+}
+```
+
+## Regras
+* O lembrete só pode ser criado se a entidade existir
+* O sistema define o status inicial como pendente
+
+---
+
+## ✏️ Atualizar lembrete
+
+**PUT** `/api/lembrete/:id`
+
+### Headers
+
+```http
+Content-Type: application/json
+Authorization: Bearer SEU_TOKEN
+```
+
+```json
+{
+  "entidade_id": 1,
+  "nome_lembrete": "Teste 01",
+  "descricao": "Testando crud...",
+  "status": "concluido",
+  "data_vencimento": "2026-04-22",
+  "dias_antecedencia": 1,
+  "email_notificacao": "islan_gomes@hotmail.com"
+}
+```
+
+## Resposta (200 OK)
+```json
+{
+  "message": "lembrete atualizado com sucesso"
+}
+```
+
+---
+
+## ❌ Deletar entidade
+
+**DELETE** `/api/entidades/:id`
+
+### Headers
+
+```http
+Content-Type: application/json
+Authorization: Bearer SEU_TOKEN
+```
+
+## Resposta (200 OK)
+```json
+{
+  "message": "lembrete deletado com sucesso"
+}
+```
 
 ---
 

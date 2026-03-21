@@ -2,7 +2,8 @@ package router
 
 import (
 	"adv_lembrete_api/internal/domain/auth"
-	lembretes "adv_lembrete_api/internal/domain/entidades"
+	"adv_lembrete_api/internal/domain/entidades"
+	"adv_lembrete_api/internal/domain/lembretes"
 	"adv_lembrete_api/internal/domain/users"
 	"time"
 
@@ -10,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter(authHandler *auth.Handler, usersHandler *users.Handler, lembreteHandler *lembretes.Handler) *gin.Engine {
+func SetupRouter(authHandler *auth.Handler, usersHandler *users.Handler, entidadesHandler *entidades.Handler, lembreteHandler *lembretes.Handler) *gin.Engine {
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
@@ -44,12 +45,19 @@ func SetupRouter(authHandler *auth.Handler, usersHandler *users.Handler, lembret
 		protected.PUT("/users/:id", usersHandler.UpdateUser)
 		protected.DELETE("/users/:id", usersHandler.DeleteUser)
 
+		// entidades
+		protected.GET("/entidades", entidadesHandler.GetAllEntidades)
+		protected.GET("/entidades/:id", entidadesHandler.GetEntidadeByID)
+		protected.POST("/entidades", entidadesHandler.CreateEntidade)
+		protected.PUT("/entidades/:id", entidadesHandler.UpdateEntidade)
+		protected.DELETE("/entidades/:id", entidadesHandler.DeleteEntidade)
+
 		// lembretes
-		protected.GET("/entidades", lembreteHandler.GetAllEntidades)
-		protected.GET("/entidades/:id", lembreteHandler.GetEntidadeByID)
-		protected.POST("/entidades", lembreteHandler.CreateEntidade)
-		protected.PUT("/entidades/:id", lembreteHandler.UpdateEntidade)
-		protected.DELETE("/entidades/:id", lembreteHandler.DeleteEntidade)
+		protected.POST("/lembretes", lembreteHandler.Create)
+		protected.GET("/lembretes", lembreteHandler.GetAll)
+		protected.GET("/lembretes/:id", lembreteHandler.GetByID)
+		protected.PUT("/lembretes/:id", lembreteHandler.Update)
+		protected.DELETE("/lembretes/:id", lembreteHandler.Delete)
 	}
 
 	return r
