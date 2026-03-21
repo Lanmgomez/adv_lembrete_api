@@ -10,6 +10,7 @@ API REST construída em Go utilizando Gin, MySQL e JWT para autenticação.
 * [🔐 Autenticação](#-1-autenticação)
 * [👥 Usuários](#-2-usuários)
 * [🏢 Entidades](#-3-entidades)
+* [⏰ Lembretes](#-4-lembretes)
 * [🛠️ Tecnologias](#️-tecnologias-utilizadas)
 
 ---
