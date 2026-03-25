@@ -2,7 +2,6 @@ package lembretes
 
 import (
 	"adv_lembrete_api/internal/models"
-	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -33,7 +32,7 @@ func (h *Handler) Create(c *gin.Context) {
 			return
 		}
 
-		c.JSON(500, gin.H{"error": "erro ao criar lembrete"})
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -45,9 +44,9 @@ func (h *Handler) Create(c *gin.Context) {
 func (h *Handler) GetAll(c *gin.Context) {
 
 	nome := c.DefaultQuery("nome", "")
+	status:= c.DefaultQuery("status", "")
 	pageStr := c.DefaultQuery("page", "1")
 	limitStr := c.DefaultQuery("limit", "10")
-	fmt.Println("Filtro nome:", nome)
 
 	page, _ := strconv.Atoi(pageStr)
 	limit, _ := strconv.Atoi(limitStr)
@@ -60,7 +59,7 @@ func (h *Handler) GetAll(c *gin.Context) {
 		limit = 10
 	}
 
-	data, total, err := h.service.GetAllLembretes(nome, page, limit)
+	data, total, err := h.service.GetAllLembretes(nome, status, page, limit)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "erro ao buscar lembretes"})
 		return

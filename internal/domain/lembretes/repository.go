@@ -3,6 +3,7 @@ package lembretes
 import (
 	"adv_lembrete_api/internal/models"
 	"database/sql"
+	"time"
 )
 
 type Repository struct {
@@ -23,9 +24,10 @@ func (r *Repository) CreateLembreteInDB(lembrete *models.Lembrete) error {
 			status,
 			data_vencimento,
 			dias_antecedencia,
-			email_notificacao
+			email_notificacao,
+			next_send_at
 		)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
 	result, err := r.DB.Exec(
@@ -37,6 +39,7 @@ func (r *Repository) CreateLembreteInDB(lembrete *models.Lembrete) error {
 		lembrete.DataVencimento,
 		lembrete.DiasAntecedencia,
 		lembrete.EmailNotificacao,
+		lembrete.NextSendAt,
 	)
 
 	if err != nil {
@@ -49,23 +52,21 @@ func (r *Repository) CreateLembreteInDB(lembrete *models.Lembrete) error {
 	return nil
 }
 
-func (r *Repository) GetAllLembretesInDB(nome string, limit, offset int) ([]models.Lembrete, int, error) {
-
+func (r *Repository) GetAllLembretesInDB(nome string, status string, limit, offset int) ([]models.Lembrete, int, error) {
 	var total int
 
-	// COUNT (com filtro)
 	countQuery := `
 		SELECT COUNT(*)
 		FROM lembretes
 		WHERE nome_lembrete LIKE ?
+		  AND (? = '' OR status = ?)
 	`
 
-	err := r.DB.QueryRow(countQuery, "%"+nome+"%").Scan(&total)
+	err := r.DB.QueryRow(countQuery, "%"+nome+"%", status, status).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	// SELECT com paginação
 	query := `
 		SELECT 
 			id,
@@ -80,11 +81,12 @@ func (r *Repository) GetAllLembretesInDB(nome string, limit, offset int) ([]mode
 			updated_at
 		FROM lembretes
 		WHERE nome_lembrete LIKE ?
+		  AND (? = '' OR status = ?)
 		ORDER BY id DESC
 		LIMIT ? OFFSET ?
 	`
 
-	rows, err := r.DB.Query(query, "%"+nome+"%", limit, offset)
+	rows, err := r.DB.Query(query, "%"+nome+"%", status, status, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -184,9 +186,85 @@ func (r *Repository) DeleteLembreteInDB(id int64) error {
 	return err
 }
 
-// UPDATE STATUS (para concluir depois)
 func (r *Repository) UpdateLembreteStatusInDB(id int64, status string) error {
 	query := `UPDATE lembretes SET status = ? WHERE id = ?`
 	_, err := r.DB.Exec(query, status, id)
+	return err
+}
+
+func (r *Repository) FindDueForSend(now time.Time) ([]models.Lembrete, error) {
+	query := `
+		SELECT
+			id,
+			entidade_id,
+			nome_lembrete,
+			descricao,
+			status,
+			data_vencimento,
+			dias_antecedencia,
+			email_notificacao,
+			created_at,
+			updated_at,
+			last_sent_at,
+			next_send_at
+		FROM lembretes
+		WHERE status IN ('pendente', 'atrasado')
+		  AND next_send_at IS NOT NULL
+		  AND next_send_at <= ?
+		ORDER BY id ASC
+	`
+
+	rows, err := r.DB.Query(query, now)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	lista := make([]models.Lembrete, 0)
+
+	for rows.Next() {
+		var l models.Lembrete
+		err := rows.Scan(
+			&l.ID,
+			&l.EntidadeID,
+			&l.NomeLembrete,
+			&l.Descricao,
+			&l.Status,
+			&l.DataVencimento,
+			&l.DiasAntecedencia,
+			&l.EmailNotificacao,
+			&l.CreatedAt,
+			&l.UpdatedAt,
+			&l.LastSentAt,
+			&l.NextSendAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		lista = append(lista, l)
+	}
+
+	return lista, nil
+}
+
+func (r *Repository) UpdateSendControl(id int64, status string, lastSentAt, nextSendAt time.Time) error {
+	query := `
+		UPDATE lembretes
+		SET status = ?, last_sent_at = ?, next_send_at = ?
+		WHERE id = ?
+	`
+	_, err := r.DB.Exec(query, status, lastSentAt, nextSendAt, id)
+	return err
+}
+
+func (r *Repository) MarkAsConcluido(id int64) error {
+	query := `
+		UPDATE lembretes
+		SET status = 'concluido',
+		    next_send_at = NULL
+		WHERE id = ?
+	`
+
+	_, err := r.DB.Exec(query, id)
 	return err
 }

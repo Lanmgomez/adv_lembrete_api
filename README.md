@@ -325,6 +325,18 @@ Authorization: Bearer SEU_TOKEN
 
 ---
 
+# Como fica o fluxo final
+## Se status for pendente
+### envia email
+### agenda próximo envio para o dia seguinte às 06:00
+
+## Se passar da data de vencimento
+### sistema troca para atrasado
+### continua enviando diariamente às 06:00
+
+## Se user marcar como concluido
+### para os envios
+
 # 🛠️ Tecnologias utilizadas
 
 * Go (Golang)
@@ -332,6 +344,7 @@ Authorization: Bearer SEU_TOKEN
 * MySQL
 * JWT
 * Docker
+* Brevo
 
 ---
 

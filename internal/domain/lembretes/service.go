@@ -38,6 +38,11 @@ func calcularStatusEDias(l *models.Lembrete) {
 	}
 }
 
+func buildFirstSendAt(dataVencimento time.Time, diasAntecedencia int) time.Time {
+	startDate := dataVencimento.AddDate(0, 0, -diasAntecedencia)
+	return time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 6, 0, 0, 0, startDate.Location())
+}
+
 func (s *Service) CreateLembrete(input models.CreateLembreteInput) (*models.Lembrete, error) {
 
 	exists, err := s.entidadesRepo.ExistsByID(input.EntidadeID)
@@ -55,15 +60,17 @@ func (s *Service) CreateLembrete(input models.CreateLembreteInput) (*models.Lemb
 		return nil, errors.New("formato de data inválido (use YYYY-MM-DD)")
 	}
 
+	nextSendAt := buildFirstSendAt(dataVencimento, input.DiasAntecedencia)
+
 	lembrete := &models.Lembrete{
 		EntidadeID:       input.EntidadeID,
 		NomeLembrete:     input.NomeLembrete,
 		Descricao:        input.Descricao,
-		Status:           "pendente", // 🔥 sempre controlado pelo sistema
-		// DataVencimento:   input.DataVencimento,
+		Status:           "pendente", 
 		DataVencimento:   dataVencimento,
 		DiasAntecedencia: input.DiasAntecedencia,
 		EmailNotificacao: input.EmailNotificacao,
+		NextSendAt:       &nextSendAt,
 	}
 
 	err = s.repo.CreateLembreteInDB(lembrete)
@@ -74,10 +81,10 @@ func (s *Service) CreateLembrete(input models.CreateLembreteInput) (*models.Lemb
 	return lembrete, nil
 }
 
-func (s *Service) GetAllLembretes(nome string, page int, limit int) ([]models.Lembrete, int, error) {
+func (s *Service) GetAllLembretes(nome string, status string, page int, limit int) ([]models.Lembrete, int, error) {
 	offset := (page - 1) * limit
 
-	list, total, err := s.repo.GetAllLembretesInDB(nome, limit, offset)
+	list, total, err := s.repo.GetAllLembretesInDB(nome, status, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -122,4 +129,16 @@ func (s *Service) UpdateLembrete(id int64, input models.CreateLembreteInput) err
 
 func (s *Service) DeleteLembrete(id int64) error {
 	return s.repo.DeleteLembreteInDB(id)
+}
+
+func (s *Service) FindDueForSend(now time.Time) ([]models.Lembrete, error) {
+	return s.repo.FindDueForSend(now)
+}
+
+func (s *Service) UpdateSendControl(id int64, status string, lastSentAt, nextSendAt time.Time) error {
+	return s.repo.UpdateSendControl(id, status, lastSentAt, nextSendAt)
+}
+
+func (s *Service) ConcluirLembrete(id int64) error {
+	return s.repo.MarkAsConcluido(id)
 }
