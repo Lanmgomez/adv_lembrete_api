@@ -7,6 +7,7 @@ import (
 	"adv_lembrete_api/internal/domain/lembretes"
 	"adv_lembrete_api/internal/domain/users"
 	"adv_lembrete_api/internal/router"
+	"adv_lembrete_api/internal/utils"
 )
 
 func main() {
@@ -31,6 +32,7 @@ func main() {
 	lembretesRepo := lembretes.NewRepository(db)
 	lembretesService := lembretes.NewService(lembretesRepo, entidadesRepo)
 	lembretesHandler := lembretes.NewHandler(lembretesService)
+	utils.StartReminderJob(lembretesService)
 
 	r := router.SetupRouter(authHandler, usersHandler, entidadesHandler, lembretesHandler)
 
