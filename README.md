@@ -32,7 +32,10 @@ go get golang.org/x/crypto/bcrypt
 go get github.com/joho/godotenv
 go get github.com/golang-jwt/jwt/v5
 go get github.com/gin-contrib/cors
-go get github.com/robfig/cron/v3
+go get github.com/aws/aws-sdk-go-v2/config
+go get github.com/aws/aws-sdk-go-v2/service/sesv2
+go get github.com/joho/godotenv
+go get github.com/jackc/pgx/v5/stdlib
 ```
 
 ---

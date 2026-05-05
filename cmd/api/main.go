@@ -1,16 +1,29 @@
 package main
 
 import (
+	"context"
+	"log"
+	"sync"
+
 	"adv_lembrete_api/database/configuration"
 	"adv_lembrete_api/internal/domain/auth"
 	"adv_lembrete_api/internal/domain/entidades"
 	"adv_lembrete_api/internal/domain/lembretes"
 	"adv_lembrete_api/internal/domain/users"
 	"adv_lembrete_api/internal/router"
-	"adv_lembrete_api/internal/utils"
+
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
+	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
+	"github.com/gin-gonic/gin"
 )
 
-func main() {
+var (
+	ginLambda *ginadapter.GinLambdaV2
+	once      sync.Once
+)
+
+func setupRouter() *gin.Engine {
 	db := configuration.ConnectDB()
 
 	// auth
@@ -28,13 +41,24 @@ func main() {
 	entidadesService := entidades.NewService(entidadesRepo)
 	entidadesHandler := entidades.NewHandler(entidadesService)
 
-	//lembretes
+	// lembretes
 	lembretesRepo := lembretes.NewRepository(db)
 	lembretesService := lembretes.NewService(lembretesRepo, entidadesRepo)
 	lembretesHandler := lembretes.NewHandler(lembretesService)
-	utils.StartReminderJob(lembretesService)
 
-	r := router.SetupRouter(authHandler, usersHandler, entidadesHandler, lembretesHandler)
+	return router.SetupRouter(authHandler, usersHandler, entidadesHandler, lembretesHandler)
+}
 
-	r.Run(":8080")
+func Handler(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
+	once.Do(func() {
+		r := setupRouter()
+		ginLambda = ginadapter.NewV2(r)
+		log.Println("Lambda initialized")
+	})
+
+	return ginLambda.ProxyWithContext(ctx, req)
+}
+
+func main() {
+	lambda.Start(Handler)
 }
