@@ -32,7 +32,7 @@ func (s *Service) Login(input models.LoginInput) (*models.LoginResponse, error) 
 	// valida senha
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password))
 	if err != nil {
-		return nil, errors.New("usuário ou senha inválidos")
+    	return nil, errors.New("usuário ou senha inválidos: " + err.Error())
 	}
 
 	// gerar token
