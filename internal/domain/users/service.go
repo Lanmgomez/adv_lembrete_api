@@ -25,25 +25,21 @@ func (s *Service) GetUserByID(id int64) (*models.User, error) {
 
 func (s *Service) CreateUser(input models.CreateUserInput) (*models.User, error) {
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
+    user := &models.User{
+        Username: input.Username,
+        Email:    input.Email,
+        Password: input.Password,
+        UserType: input.UserType,
+    }
 
-	user := &models.User{
-		Username: input.Username,
-		Email: input.Email,
-		Password: string(hashedPassword),
-		UserType: input.UserType,
-	}
+    err := s.repo.CreateNewUserInDB(user)
+    if err != nil {
+        return nil, err
+    }
 
-	err = s.repo.CreateNewUserInDB(user)
-	if err != nil {
-		return nil, err
-	}
-
-	user.Password = ""
-	return user, nil
+    user.Password = ""
+    
+    return user, nil
 }
 
 func (s *Service) UpdateUser(id int64, input models.CreateUserInput) error {
