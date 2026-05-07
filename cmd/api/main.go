@@ -1,9 +1,8 @@
 package main
 
 import (
-	"context"
 	"log"
-	"sync"
+	"os"
 
 	"adv_lembrete_api/database/configuration"
 	"adv_lembrete_api/internal/domain/auth"
@@ -12,15 +11,7 @@ import (
 	"adv_lembrete_api/internal/domain/users"
 	"adv_lembrete_api/internal/router"
 
-	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
-	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
 	"github.com/gin-gonic/gin"
-)
-
-var (
-    ginLambda *ginadapter.GinLambdaV2
-    once      sync.Once
 )
 
 func setupRouter() *gin.Engine {
@@ -46,22 +37,31 @@ func setupRouter() *gin.Engine {
     lembretesService := lembretes.NewService(lembretesRepo, entidadesRepo)
     lembretesHandler := lembretes.NewHandler(lembretesService)
 
-    return router.SetupRouter(authHandler, usersHandler, entidadesHandler, lembretesHandler)
-
+    return router.SetupRouter(
+        authHandler, 
+        usersHandler, 
+        entidadesHandler, 
+        lembretesHandler,
+    )
 }
 
-func Handler(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
-    once.Do(func() {
-        r := setupRouter()
+func getPort() string {
+	port := os.Getenv("PORT")
 
-        ginLambda = ginadapter.NewV2(r)
+	if port == "" {
+		port = "8080"
+	}
 
-        log.Println("Lambda initialized")
-    })
-
-    return ginLambda.ProxyWithContext(ctx, req)
+	return ":" + port
 }
 
 func main() {
-    lambda.Start(Handler)
+	r := setupRouter()
+	port := getPort()
+
+	log.Printf("Servidor iniciando na porta %s", port)
+
+	if err := r.Run(port); err != nil {
+		log.Fatalf("Erro ao iniciar o servidor: %v", err)
+	}
 }

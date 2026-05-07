@@ -3,12 +3,18 @@ package utils
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"adv_lembrete_api/internal/domain/lembretes"
 )
 
-const reminderSendHour = 8
+const (
+	reminderSendHour = 8
+
+	statusPendente = "pendente"
+	statusAtrasado = "atrasado"
+)
 
 func ProcessDueReminders(ctx context.Context, service *lembretes.Service, now time.Time) error {
 	items, err := service.FindDueForSend(now)
@@ -16,23 +22,22 @@ func ProcessDueReminders(ctx context.Context, service *lembretes.Service, now ti
 		return fmt.Errorf("erro ao buscar lembretes para envio: %w", err)
 	}
 
+	today := truncateDate(now)
+
 	for _, l := range items {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
+		if err := ctx.Err(); err != nil {
+			return err
 		}
 
-		if l.Status != "pendente" && l.Status != "atrasado" {
+		if l.Status != statusPendente && l.Status != statusAtrasado {
 			continue
 		}
 
 		status := l.Status
-		today := truncateDate(now)
-		due := truncateDate(l.DataVencimento)
+		due := truncateDate(l.DataVencimento.In(now.Location()))
 
 		if today.After(due) {
-			status = "atrasado"
+			status = statusAtrasado
 		}
 
 		subject := "Lembrete: " + l.NomeLembrete
@@ -41,25 +46,23 @@ func ProcessDueReminders(ctx context.Context, service *lembretes.Service, now ti
 			"Olá!\n\nLembrete: %s\nDescrição: %s\nVencimento: %s\nStatus atual: %s\n",
 			l.NomeLembrete,
 			l.Descricao,
-			l.DataVencimento.Format("2006-01-02"),
+			l.DataVencimento.In(now.Location()).Format("02/01/2006"),
 			status,
 		)
 
-		err := SendEmail(l.EmailNotificacao, subject, body)
-		if err != nil {
-			fmt.Println("erro ao enviar email para", l.EmailNotificacao, ":", err)
+		if err := SendEmailWithContext(ctx, l.EmailNotificacao, subject, body); err != nil {
+			log.Printf("erro ao enviar email para %s: %v", l.EmailNotificacao, err)
 			continue
 		}
 
 		nextSendAt := buildNextDailySendAt(now)
 
-		err = service.UpdateSendControl(l.ID, status, now, nextSendAt)
-		if err != nil {
-			fmt.Println("erro ao atualizar controle de envio do lembrete", l.ID, ":", err)
+		if err := service.UpdateSendControl(l.ID, status, now, nextSendAt); err != nil {
+			log.Printf("erro ao atualizar controle de envio do lembrete %v: %v", l.ID, err)
 			continue
 		}
 
-		fmt.Println("email enviado com sucesso para:", l.EmailNotificacao)
+		log.Printf("email enviado com sucesso para: %s", l.EmailNotificacao)
 	}
 
 	return nil

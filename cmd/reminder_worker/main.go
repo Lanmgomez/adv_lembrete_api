@@ -2,55 +2,61 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"log"
-	"sync"
 	"time"
 
 	"adv_lembrete_api/database/configuration"
 	"adv_lembrete_api/internal/domain/entidades"
 	"adv_lembrete_api/internal/domain/lembretes"
 	"adv_lembrete_api/internal/utils"
-
-	"github.com/aws/aws-lambda-go/lambda"
 )
 
-var (
-	lembretesService *lembretes.Service
-	once             sync.Once
-)
+/*
+	Na Render, este binário deve ser executado como Cron Job.
+	Cada execução faz:
 
-/*  Essa Lambda não tem Gin, não tem API Gateway e não tem rota HTTP.
-	Ela só faz isso: 
-	foi chamada -> conecta no banco -> busca lembretes -> envia emails -> atualiza banco 
+	1. conecta no banco
+	2. busca lembretes vencidos
+	3. envia os e-mails
+	4. atualiza o banco
+	5. encerra o processo
 */
 
-func setupService() {
+func setupService() *lembretes.Service {
 	db := configuration.ConnectDB()
 
 	entidadesRepo := entidades.NewRepository(db)
 
 	lembretesRepo := lembretes.NewRepository(db)
-	lembretesService = lembretes.NewService(lembretesRepo, entidadesRepo)
+	lembretesService := lembretes.NewService(lembretesRepo, entidadesRepo)
 
 	log.Println("Reminder worker initialized")
+
+	return lembretesService
 }
 
-func Handler(ctx context.Context, event json.RawMessage) error {
-	once.Do(setupService)
-
+func getCurrentTime() time.Time {
 	loc, err := time.LoadLocation("America/Sao_Paulo")
 	if err != nil {
-		loc = time.Local
+		log.Printf("Erro ao carregar timezone America/Sao_Paulo, usando timezone local: %v", err)
+		return time.Now()
 	}
 
-	now := time.Now().In(loc)
-
-	log.Println("Rodando worker de lembretes em:", now.Format("2006-01-02 15:04:05"))
-
-	return utils.ProcessDueReminders(ctx, lembretesService, now)
+	return time.Now().In(loc)
 }
 
 func main() {
-	lambda.Start(Handler)
+	lembretesService := setupService()
+
+	now := getCurrentTime()
+
+	log.Println("Rodando worker de lembretes em:", now.Format("2006-01-02 15:04:05"))
+
+	ctx := context.Background()
+
+	if err := utils.ProcessDueReminders(ctx, lembretesService, now); err != nil {
+		log.Fatalf("Erro ao processar lembretes: %v", err)
+	}
+
+	log.Println("Worker de lembretes finalizado com sucesso")
 }
