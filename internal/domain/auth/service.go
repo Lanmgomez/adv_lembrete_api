@@ -24,9 +24,9 @@ func (s *Service) Login(input models.LoginInput) (*models.LoginResponse, error) 
 	user, err := s.repo.FindUserByEmail(input.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.New("usuário ou senha inválidos")
+			return nil, errors.New("usuário não encontrado no banco: " + err.Error())
 		}
-		return nil, err
+		return nil, errors.New("erro interno ao buscar usuário: " + err.Error())
 	}
 
 	// valida senha
